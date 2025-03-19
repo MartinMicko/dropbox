@@ -1,14 +1,14 @@
 {
     "AWS": {
-      "access_key_id": "AKIA4LLE7KKGTHOY4IWP",
-      "secret_access_key": "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",
+      "access_key_id": "xxxxxxxxxxxxxx",
+      "secret_access_key": "xxxxxxxxxxxxxxxxxxxxxxx",
       "region": "eu-central-1",
       "bucket_name": "prototype-dopbox"
     },
     "Database": {
       "host": "terraform-20241216094718194500000001.cwahu58cgduf.eu-central-1.rds.amazonaws.com",
       "user": "admin",
-      "password": "adminpassword",
+      "password": "xxxxxxxxxxxxxxxxxxx",
       "database": "dropbox_db"
     },
     "Session": {
