@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <title>All Users</title>
+    <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+</head>
+
+<body>
+    <%- include('header') %>
+        <div class="container">
+            <h1>All Users</h1>
+            <table class="table table-bordered table-striped">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>First Name</th>
+                        <th>Last Name</th>
+                        <th>Username</th>
+                        <th>User Type</th>
+                        <th>Actions</th>
+                        
+                    </tr>
+                </thead>
+                <tbody>
+                    <% users.forEach(user=> { %>
+                        <tr>
+                            <td>
+                                <%= user.id %>
+                            </td>
+                            <td>
+                                <%= user.first_name %>
+                            </td>
+                            <td>
+                                <%= user.last_name %>
+                            </td>
+                            <td>
+                                <%= user.user_name %>
+                            </td>
+                            <td>
+                                <%= user.user_type %>
+                            </td>
+
+                            <td>
+                                <!-- Change user type button (if user is employee) -->
+                                <% if (user.user_type==='employee' ) { %>
+                                    <form action="/changeUserType/<%= user.id %>" method="POST" style="display:inline;">
+                                        <button type="submit" class="btn btn-success">Make Admin</button>
+                                    </form>
+                                    <% } %>
+
+                                        <!-- Delete button -->
+                                        <form action="/deleteUser/<%= user.id %>" method="POST" style="display:inline;">
+                                            <button type="submit" class="btn btn-danger">Delete</button>
+                                        </form>
+
+                                        <!-- Suspend button -->
+                                        <form action="<%= user.is_suspended ? '/unsuspendUser/' + user.id : '/suspendUser/' + user.id %>" method="POST" style="display:inline;">
+                                            <% if (user.is_suspended) { %>
+                                                <button type="submit" class="btn btn-success">Unsuspend</button>
+                                            <% } else { %>
+                                                <button type="submit" class="btn btn-warning">Suspend</button>
+                                            <% } %>
+                                        </form>
+                                        
+                            </td>
+
+                        </tr>
+                        <% }); %>
+                </tbody>
+            </table>
+
+
+            <a href="/home/dashboard" class="btn btn-primary">Back to Dashboard</a>
+        </div>
+        <%- include('footer') %>
+</body>
+
+</html>

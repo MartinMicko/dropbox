@@ -1,0 +1,186 @@
+<%- include('header') %>
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>S3 File Manager</title>
+  <link rel="stylesheet" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.1/css/bootstrap.min.css">
+  <style>
+    body {
+      margin-top: 30px;
+    }
+    .container {
+      width: 80%;
+      margin: 0 auto;
+    }
+    h1, h3 {
+      text-align: center;
+    }
+    .upload-section, .list-section {
+      margin-top: 30px;
+    }
+    .file-list {
+      margin-top: 20px;
+    }
+    .file-list p {
+      padding: 8px;
+      background-color: #f8f9fa;
+      border-radius: 5px;
+      margin-bottom: 5px;
+    }
+    .btn-custom {
+      margin-top: 10px;
+      font-size: 16px;
+    }
+  </style>
+</head>
+
+<body>
+  <div class="container">
+    <!-- Page Header -->
+    <h1>S3 File Manager</h1>
+
+    <!-- Upload File Section -->
+    <div class="upload-section">
+      <h3>Upload a File</h3>
+      <div class="form-group">
+        <label for="fileInput">Select File</label>
+        <input type="file" id="fileInput" class="form-control">
+      </div>
+      <button onclick="uploadFile()" class="btn btn-primary btn-custom">Upload</button>
+      <div id="uploadStatus" class="mt-3"></div>
+    </div>
+
+    <!-- List Files Section -->
+    <div class="list-section">
+      <h3>Files in S3 Bucket</h3>
+      <button onclick="listFiles()" class="btn btn-success btn-custom">List Files</button>
+      <div class="file-list" id="fileList"></div>
+    </div>
+  </div>
+
+  <script>
+    // Get the username from the session dynamically (assumed to be stored in session)
+    const username = '<%= user.user_name %>';  // This will insert the username from the session
+
+    async function uploadFile() {
+      const fileInput = document.getElementById('fileInput');
+      if (!fileInput.files.length) {
+        alert('Please select a file to upload');
+        return;
+      }
+      const file = fileInput.files[0];
+      if (file.size > 500 * 1024 * 1024) {
+        alert('File size exceeds the limit of 5 MB');
+        return;
+      }
+
+      // Step 1: Request a pre-signed URL with user folder prefix
+      const response = await fetch('/generate-upload-url', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          fileName: `${username}/${file.name}`,  // Prepend username to simulate folder
+          fileType: file.type,
+          fileSize: file.size,
+        }),
+      });
+
+      const data = await response.json();
+      if (!response.ok) {
+        document.getElementById('uploadStatus').innerText = 'Error generating upload URL';
+        console.error(data.error);
+        return;
+      }
+
+      const uploadUrl = data.url;
+      console.log('Upload URL:', uploadUrl);
+
+      // Step 2: Upload the file using the URL
+      try {
+        await fetch(uploadUrl, {
+          method: 'PUT',
+          body: file,
+          headers: {
+            'Content-Type': file.type,
+          },
+        });
+        document.getElementById('uploadStatus').innerText = 'File uploaded successfully!';
+      } catch (err) {
+        document.getElementById('uploadStatus').innerText = 'Error uploading file';
+        console.error(err);
+      }
+    }
+
+    async function listFiles() {
+      try {
+        // Fetch files for the logged-in user
+        const response = await fetch('/generate-file-list');  // This assumes the server automatically handles session-based user filtering
+
+        // Check if the response was successful
+        if (!response.ok) {
+          document.getElementById('fileList').innerText = 'Error retrieving file list';
+          const data = await response.json();
+          console.error(data.error);
+          return;
+        }
+
+        const data = await response.json();
+
+        // Get the file list container element
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = ''; // Clear any previous list
+
+        // If there are no files, display a message
+        if (data.files.length === 0) {
+          fileList.innerHTML = '<p>No files found.</p>';
+          return;
+        }
+
+        // Loop through the files and create elements for each
+        data.files.forEach(file => {
+          const fileElement = document.createElement('div');
+          fileElement.innerHTML = `
+            <p>
+              ${file.fileName} - 
+              <a href="#" onclick="generateAndDownload('${username}/${file.fileName}')">Download</a>
+            </p>
+          `;
+          fileList.appendChild(fileElement);
+        });
+      } catch (err) {
+        console.error('Error listing files:', err);
+        document.getElementById('fileList').innerText = 'Error retrieving file list';
+      }
+    }
+
+    async function generateAndDownload(fileName) {
+      try {
+        const response = await fetch(`/generate-download-url/${encodeURIComponent(fileName)}`);
+        const data = await response.json();
+
+        if (!response.ok) {
+          alert('Error generating download URL');
+          console.error(data.error);
+          return;
+        }
+
+        // Open the pre-signed URL in a new tab or trigger the download
+        window.open(data.url, '_blank');
+      } catch (err) {
+        console.error('Error fetching download URL:', err);
+        alert('Error generating download URL');
+      }
+    }
+  </script>
+  <script data-jsd-embedded data-key="bcf2302e-303a-4e83-9b1a-a5beb33833a7"
+  data-base-url="https://jsd-widget.atlassian.com/"
+  src="https://jsd-widget.atlassian.com/assets/embed.js"></script>
+</body>
+
+
+</html>

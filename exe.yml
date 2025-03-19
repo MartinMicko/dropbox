@@ -1,0 +1,10 @@
+---
+- hosts: Linux
+  become: yes
+  tasks:
+    - name: Synchronize the "dropbox" folder to the instance
+      synchronize:
+        src: ./ 
+        dest: /home/dropbox/
+        rsync_opts:
+          - "--chmod=0755"

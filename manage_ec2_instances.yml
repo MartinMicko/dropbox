@@ -1,0 +1,77 @@
+---
+- hosts: linux
+  become: yes
+  gather_timeout: 5
+  tasks:
+    - name: Update and upgrade apt packages
+      apt:
+        update_cache: yes
+        upgrade: dist
+
+    - name: Install rsync (for synchronize module)
+      apt:
+        name: rsync
+        state: present
+
+    - name: Synchronize the "dropbox" folder to the instance
+      synchronize:
+        src: ./ 
+        dest: /home/dropbox/
+        rsync_opts:
+          - "--chmod=0755"
+
+    - name: Install MySQL client
+      apt:
+        name: mysql-client
+        state: present
+
+    - name: Install Node.js
+      apt:
+        name: nodejs
+        state: present
+
+    - name: Install npm
+      apt:
+        name: npm
+        state: present
+
+    - name: Install bcrypt (for password hashing)
+      npm:
+        name: bcrypt
+        path: /home/dropbox/app
+        state: present
+
+    - name: Install required npm packages
+      npm:
+        path: /home/dropbox/app
+        state: present
+
+    - name: Install AWS SDK package using npm
+      npm:
+        name: aws-sdk
+        path: /home/dropbox/app
+        state: present
+
+    - name: Create database in MySQL
+      command: >
+        mysql -h {{ db_host }} -u {{ db_user }} -p{{ db_pass }} -e "CREATE DATABASE IF NOT EXISTS dropbox_db;"
+
+    - name: Create users table in MySQL database
+      command: >
+        mysql -h {{ db_host }} -u {{ db_user }} -p{{ db_pass }} dropbox_db -e "
+        CREATE TABLE IF NOT EXISTS users (
+            id INT PRIMARY KEY AUTO_INCREMENT,
+            first_name VARCHAR(50),
+            last_name VARCHAR(50),
+            user_name VARCHAR(50),
+            password VARCHAR(255),
+            user_type VARCHAR(50),
+            email VARCHAR(255),
+            is_suspended  TINYINT DEFAULT 0
+
+        );"
+
+    - name: Start Node.js application
+      command: node /home/dropbox/app.js
+      args:
+        chdir: /home/dropbox/app
